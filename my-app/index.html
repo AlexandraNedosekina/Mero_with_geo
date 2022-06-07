@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css" type="text/css">
+    <style>
+        .map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+
+
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>
+    <title>Мероприятия с геопозиционированием</title>
+</head>
+<body>
+<h2>My Map</h2>
+<div id="map" class="map"></div>
+<div id="layers">
+    <h1 class="layers"></h1>
+    <button>
+        <h2 id="btn" onclick="zoomtobihar()">Bihar</h2>
+    </button>
+</div>
+<script type="text/javascript">
+    var map = new ol.Map({
+        target: 'map',
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            }),
+
+        ],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([60.658895213029815,56.839647146522445]),
+            zoom: 16
+        }),
+    });
+
+</script>
+<form name='form' enctype="multipart/form-data" method="post">
+    <label for='file'></label>
+    <input type='file' id='file' name='file'>
+    <input type='button' onclick="onSubmit()" value="Отправить KML файл">
+</form>
+<script src="main.js">
+
+    function onSubmit () {
+        let data = new FormData()
+
+        data.append('file', new Blob([document.getElementById('file').files[0]],
+            { type: 'application/vnd.google-earth.kml+xml' }))
+        fetch('http://localhost:3000//upload-kml', {
+            method: 'POST',
+            body: data
+        })
+            .then((response) => {
+                return response.json();
+            })
+            .then((data) => {
+                let features = new ol.format.KML().readFeatures(data.data)
+                vectorSource.clear()
+                vectorSource.addFeature(features[0])
+            });
+        map.removeLayer(vector);
+    }
+    function addImage(vectorMap) {
+
+        var vectorSource = vectorMap.getSource();
+
+        // listen for one change on the vector to get the extent of it
+        // for use in setting the image extent. tried to use on.('load')
+        // but it didnt work
+        var listenerKey = vectorSource.once('change', function () {
+
+            var extent = vectorSource.getExtent();
+
+            var projection = new ol.proj.Projection({
+                code: 'xkcd-image',
+                units: 'pixels',
+                extent: extent
+            });
+
+            image = new ol.layer.Image({
+                source: new ol.source.ImageStatic({
+                    attributions: [],
+                    url: MAPS_URL + images[map_id],
+                    projection: projection,
+                    imageExtent: extent
+                })
+            });
+
+            // remove vector layer else they keep stacking up
+            map.removeLayer(vector);
+            // add image
+            map.addLayer(image);
+            // re-add vector only push so it goes above the image
+            map.getLayers().push(vector);
+
+        });
+    }
+</script>
+</body>
+</html>
