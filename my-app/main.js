@@ -30,7 +30,7 @@ var mykmllayer = new ol.layer.Vector({
     // strategies: [new ol.Strategy.fixed()],
     source: new ol.source.Vector({
         format: new ol.format.GeoJSON(),
-        url: 'result.json'
+        url: 'result.kml'
     })
 })
 map.addLayer(mykmllayer)
